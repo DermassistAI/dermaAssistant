@@ -1,0 +1,23 @@
+[project]
+name = "dermaassistant"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "agno>=1.5.0",
+    "duckduckgo-search>=8.0.1",
+    "fastapi>=0.115.12",
+    "fastembed>=0.7.0",
+    "groq>=0.24.0",
+    "lancedb>=0.22.1",
+    "pgvector>=0.4.1",
+    "pubmed>=0.0.2.post0",
+    "pydantic>=2.11.4",
+    "pydantic-core>=2.33.2",
+    "pypdf>=5.5.0",
+    "python-dotenv>=1.1.0",
+    "sqlalchemy>=2.0.40",
+    "tantivy>=0.24.0",
+    "uvicorn>=0.34.2",
+]
