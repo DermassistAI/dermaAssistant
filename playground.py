@@ -1,11 +1,22 @@
 import asyncio
 from agno.agent import Agent
 from agno.models.groq import Groq
-from agno.playground import Playground, serve_playground_app
+#add image analysis
+#from agno.media import Image
+#from agno.playground import Playground, serve_playground_app
 from agno.storage.sqlite import SqliteStorage
 from agno.tools.duckduckgo import DuckDuckGoTools
 from agno.tools.pubmed import PubmedTools
 from skin.skin_kb import DermaKnowledgeBase
+#wozzap
+from agno.app.whatsapp.app import WhatsappAPI
+from agno.app.whatsapp.serve import serve_whatsapp_app
+#fastAPI
+from fastapi.responses import PlainTextResponse
+from fastapi import Request
+#from imagehandler import router as image_router
+
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -83,7 +94,7 @@ def main():
 
     derma_agent = Agent(
         name="Derma Agent",
-        model=Groq(id="meta-llama/llama-4-scout-17b-16e-instruct"),
+        model=Groq(id="meta-llama/llama-4-scout-17b-16e-instruct"), 
         tools=[DuckDuckGoTools(), PubmedTools()],
         knowledge=kb.get_knowledge_base(),
         show_tool_calls=True,
@@ -99,6 +110,8 @@ def main():
         4) Configuration (linear, annular, grouped)
         5) Surface features (scaling, crusting, ulceration, lichenification)
 
+        #ABCDE Description of lesions
+        #the 5s - size, shape,
         Definitive Diagnosis:
         Provide a clear and concise diagnosis.
         Justify your choice based on the clinical presentation and typical findings.
@@ -125,8 +138,26 @@ def main():
         markdown=True,
     )
 
-    app = Playground(agents=[web_agent, med_agent, derma_agent]).get_app()
-    serve_playground_app(app)
+    #app = Playground(agents=[web_agent, med_agent, derma_agent]).get_app()
+    #serve_playground_app(app)
+
+    # Async router by default (use_async=True)
+    
+    app = WhatsappAPI( agent=derma_agent, ).get_app()
+  
+    VERIFY_TOKEN = "BruceNicoleKoome"
+
+    @app.get("/webhook", response_class=PlainTextResponse)
+    async def verify_webhook(request: Request):
+        mode = request.query_params.get("hub.mode")
+        token = request.query_params.get("hub.verify_token")
+        challenge = request.query_params.get("hub.challenge")
+
+        if mode == "subscribe" and token == VERIFY_TOKEN:
+            return PlainTextResponse(content=challenge, status_code=200)
+        return PlainTextResponse("Invalid token", status_code=403)
+
+    serve_whatsapp_app(app, port=8000, reload=False)
 
 # Only run if the script is executed directly
 if __name__ == "__main__":
