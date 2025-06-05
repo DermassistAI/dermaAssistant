@@ -23,5 +23,6 @@ dependencies = [
     "python-dotenv>=1.1.0",
     "sqlalchemy>=2.0.40",
     "tantivy>=0.24.0",
+    "twilio>=9.6.2",
     "uvicorn>=0.34.2",
 ]
