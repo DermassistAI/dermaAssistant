@@ -6,7 +6,7 @@ PYTHON = python3
 # Uvicorn settings
 HOST = 0.0.0.0
 PORT = 8000
-APP = dermaAssistant:app
+APP = twilio_response:app
 RELOAD = --reload
 
 # Install dependencies

@@ -14,6 +14,8 @@ from agno.tools.pubmed import PubmedTools
 from agno.tools.twilio import TwilioTools
 from agno.exceptions import ModelProviderError
 from skin.skin_kb import DermaKnowledgeBase
+#Twilio imports
+from twilio.twiml.messaging_response import MessagingResponse
 from twilio.rest import Client
 from clinical_tools import get_clinical_input, ClinicalInfo
 
@@ -189,7 +191,7 @@ async def whatsapp_webhook(request: Request):
     except Exception as e:
         print(f"[ERROR] Exception in whatsapp_webhook: {str(e)}")
         return PlainTextResponse(
-            content="<Response><Message>I apologize, but I encountered an error. Please provide a clear description of the skin condition, including its location and appearance.</Message></Response>",
+            content="<Response><Message>Sorry, I had trouble processing that. Please describe your skin issue—e.g.,\"I have a red rash on my arm that has been there for 3 days.\"</Message></Response>",
             media_type="application/xml"
         )
 
