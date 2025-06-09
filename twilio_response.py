@@ -11,6 +11,8 @@ from fastapi.responses import PlainTextResponse
 
 from agno.memory.v2.db.sqlite import SqliteMemoryDb
 from agno.memory.v2.memory import Memory
+#handle images
+from image import upload_to_cloudinary
 
 #Twilio imports
 import base64
@@ -35,6 +37,19 @@ agent_memory = Memory(
 )
 agent_storage: str = "tmp/agents.db"
 
+# def load_derma_kb():
+#     kb = DermaKnowledgeBase(
+#         table_name="derma_knowledge",
+#         db_path="./my_local_lancedb",
+#         pdf_paths=["resources"],
+#         urls = [""]
+#     )
+#     import asyncio
+#     asyncio.run(kb.aload(upsert=True, recreate=False))
+#     return kb
+
+# kb = load_derma_kb()
+
 app = FastAPI()
 
 derma_agent = Agent(
@@ -44,7 +59,7 @@ derma_agent = Agent(
         memory=agent_memory,
         enable_user_memories=True,
         session_id="derma_whatsapp_session",
-        #knowledge=kb.get_knowledge_base(),
+        # knowledge=kb.get_knowledge_base(),
         show_tool_calls=True,
         instructions=[
             """
@@ -118,21 +133,25 @@ async def whatsapp_webhook(
         print(f"MediaUrl0 received from Twilio webhook: '{MediaUrl0}'")
         image_bytes = download_image(MediaUrl0, account_sid, auth_token)
         if image_bytes:
-            image_b64 = base64.b64encode(image_bytes).decode("utf-8")
-            # Adjust the message format below to match Groq's multimodal API
+            # Upload to Cloudinary to get a public URL
+            cloud_url = upload_to_cloudinary(image_bytes)
+            print(f"[DEBUG] Cloudinary returned URL: {cloud_url}")
+            if not cloud_url:
+                print("[ERROR] Cloudinary upload failed or returned no URL!")
             messages.append({
                 "role": "user",
                 "content": [
                     {"type": "text", "text": Body.strip() if Body else ""},
-                    {"type": "image", "image": {"base64": image_b64}}
-
+                    {"type": "image_url", "image_url": {"url": cloud_url}}
                 ]
             })
+
         else:
             messages.append({"role": "user", "content": "User sent an image, but it could not be downloaded."})
 
-    if not messages:
-        messages.append({"role": "user", "content": "No message content received."})
+
+        if not messages:
+            messages.append({"role": "user", "content": "No message content received."})
 
     try:
         agent_response = await derma_agent.arun(
@@ -140,7 +159,7 @@ async def whatsapp_webhook(
             user_id=From,
             tools=[TwilioTools()]
         )
-
+        print(f"[DEBUG] Full agent_response: {agent_response}")
         assistant_reply = next(
             (msg.content for msg in agent_response.messages if msg.role == "assistant"),
             "Sorry, I couldn’t process your message."

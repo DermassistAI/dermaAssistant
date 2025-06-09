@@ -43,16 +43,25 @@ def upload_to_cloudinary(image_bytes: bytes) -> str:
     return uploaded["secure_url"]
 
 # WhatsApp image message handler
+# 
 @router.on_image()
 async def handle_image(agent, wa_id: str, media_id: str, caption: str | None, request: Request):
     token = os.getenv("WHATSAPP_TOKEN")
     try:
+        # Step 1: Download image from WhatsApp
         image_url = await get_media_url(media_id, token)
         image_bytes = await download_image(image_url, token)
+
+        # Step 2: Upload to Cloudinary
         cloud_url = upload_to_cloudinary(image_bytes)
 
-        # Send to Derma Agent
-        response = await agent.astream(input=cloud_url, user_id=wa_id, metadata={"caption": caption})
+        # Step 3: Send to Derma Agent using vision-compatible format
+        content = [
+            {"type": "text", "text": caption or "Please analyze this image."},
+            {"type": "image_url", "image_url": {"url": cloud_url}},
+        ]
+
+        response = await agent.astream(input=content, user_id=wa_id)
         async for chunk in response:
             await router.reply(wa_id, chunk)
 
